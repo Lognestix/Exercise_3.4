@@ -1,17 +1,32 @@
 package ru.netology.manager;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import ru.netology.domain.Movie;
+import ru.netology.repository.AfishaRepository;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.verify;
 
+@ExtendWith(MockitoExtension.class)
 class AfishaManagerTest {
 
-    //Общие данные:
-    private final AfishaManager afishaManagerDefault = new AfishaManager();
-    private final AfishaManager afishaManagerCustom = new AfishaManager(5);
-    private final AfishaManager afishaManagerCustomNegative = new AfishaManager(-5);
+    @Mock
+    private AfishaRepository repository;    //Либо, если без аннотации private AfishaRepository repository = Mockito.mock(AfishaRepository.class);
 
+    @InjectMocks
+    //private AfishaManager afishaManagerDefault;     //Укороченная запись, если входной параметр только репозиторий
+    private AfishaManager afishaManagerDefault = new AfishaManager(repository);
+    @InjectMocks
+    private AfishaManager afishaManagerCustom = new AfishaManager(repository, 5);
+    @InjectMocks
+    private AfishaManager afishaManagerCustomNegative = new AfishaManager(repository,-5);
+
+    //Общие данные:
     private final Movie zero = new Movie(0, null, false, "Бладшот.", "Боевик");
     private final Movie first = new Movie(1, null, false, "Вперед.", "Мультфильм");
     private final Movie second = new Movie(2, null, false, "Отель Белград.", "Комедия");
@@ -25,107 +40,72 @@ class AfishaManagerTest {
     private final Movie tenth = new Movie(10, null, false, "Месть земли.", "Боевик");
     private final Movie eleventh = new Movie(11, null, false, "Венецианский купец.", "Драма");
 
-    @Test   //Тест на сохранение фильма в массиве данных
-    void shouldSaveMovie() {
-        afishaManagerDefault.saveMovie(zero);
+    @Test   //Тест стандартного менеджера на вывод последних 10 фильмов
+    void shouldAfishaManagerDefaultGetAll() {
+        //Настройка заглушки
+        Movie[] result = {zero, first, second, third, fourth, fifth, sixth, seventh, eighth, ninth, tenth, eleventh};
+        doReturn(result).when(repository).findAll();
 
-        Movie[] expected = { zero };
-        Movie[] actual = afishaManagerDefault.findAll();
+        Movie[] actual = afishaManagerDefault.getAll();
+        Movie[] expected = {eleventh, tenth, ninth, eighth, seventh, sixth, fifth, fourth, third, second};
+        assertArrayEquals(expected, actual, "Вывод 10 последних добавленных фильмов");
 
-        assertArrayEquals(actual, expected);
+        //Проверка вызова заглушки
+        verify(repository).findAll();
     }
 
-    @Test   //Тест на вывод последних 10 добавленных фильмов, при том что их меньше
-    void shouldFindAllBelowNominalAfishaManagerDefault() {
-        afishaManagerDefault.saveMovie(zero);
-        afishaManagerDefault.saveMovie(first);
-        afishaManagerDefault.saveMovie(second);
-        afishaManagerDefault.saveMovie(third);
-        afishaManagerDefault.saveMovie(fourth);
+    @Test   //Тест стандартного менеджера на вывод последних добавленых фильмов, если их меньше 10
+    void shouldAfishaManagerDefaultGetAllLess10() {
+        //Настройка заглушки
+        Movie[] result = {zero, first, second, third, fifth, seventh, ninth, eleventh};
+        doReturn(result).when(repository).findAll();
 
-        Movie[] expected = { fourth, third, second, first, zero };
-        Movie[] actual = afishaManagerDefault.findAll();
+        Movie[] actual = afishaManagerDefault.getAll();
+        Movie[] expected = { eleventh, ninth, seventh, fifth, third, second, first, zero };
+        assertArrayEquals(expected, actual, "Вывод последних добавленных фильмов, если их меньше 10");
 
-        assertArrayEquals(actual, expected);
+        //Проверка вызова заглушки
+        verify(repository).findAll();
     }
 
-    @Test   //Тест на вывод последних 10 добавленных фильмов
-    void shouldFindAllNominalAfishaManagerDefault() {
-        afishaManagerDefault.saveMovie(zero);
-        afishaManagerDefault.saveMovie(first);
-        afishaManagerDefault.saveMovie(second);
-        afishaManagerDefault.saveMovie(third);
-        afishaManagerDefault.saveMovie(fourth);
-        afishaManagerDefault.saveMovie(fifth);
-        afishaManagerDefault.saveMovie(sixth);
-        afishaManagerDefault.saveMovie(seventh);
-        afishaManagerDefault.saveMovie(eighth);
-        afishaManagerDefault.saveMovie(ninth);
-        afishaManagerDefault.saveMovie(tenth);
-        afishaManagerDefault.saveMovie(eleventh);
+    @Test   //Тест менеджера с указанным количеством на вывод последних фильмов
+    void shouldAfishaManagerCustomGetAll() {
+        //Настройка заглушки
+        Movie[] result = { zero, first, second, third, fourth, fifth, sixth, seventh, eighth, ninth, tenth, eleventh };
+        doReturn(result).when(repository).findAll();
 
-        Movie[] expected = { eleventh, tenth, ninth, eighth, seventh, sixth, fifth, fourth, third, second };
-        Movie[] actual = afishaManagerDefault.findAll();
+        Movie[] actualManagerCustom = afishaManagerCustom.getAll();
+        Movie[] expectedManagerCustom = { eleventh, tenth, ninth, eighth, seventh };
+        assertArrayEquals(expectedManagerCustom, actualManagerCustom, "Вывод указанного числа последних добавленных фильмов");
 
-        assertArrayEquals(actual, expected);
+        //Проверка вызова заглушки
+        verify(repository).findAll();
     }
 
-    @Test   //Тест на удаление фильма по идентификатору фильма
-    void shouldRemoveMovieById() {
-        afishaManagerDefault.saveMovie(zero);
-        afishaManagerDefault.saveMovie(first);
-        afishaManagerDefault.removeMovieById(0);
+    @Test   //Тест менеджера с указанным количеством на вывод последних добавленых фильмов, если их меньше указанного числа
+    void shouldAfishaManagerCustomGetAllLessNumber() {
+        //Настройка заглушки
+        Movie[] result = { zero, second, third, eleventh };
+        doReturn(result).when(repository).findAll();
 
-        Movie[] expected = { first };
-        Movie[] actual = afishaManagerDefault.findAll();
+        Movie[] actualManagerCustomLessCustom = afishaManagerCustom.getAll();
+        Movie[] expectedManagerCustomLessCustom = { eleventh, third, second, zero };
+        assertArrayEquals(expectedManagerCustomLessCustom, actualManagerCustomLessCustom, "Вывод последних добавленных фильмов, если их меньше указанного числа");
 
-        assertArrayEquals(actual, expected);
+        //Проверка вызова заглушки
+        verify(repository).findAll();
     }
+    @Test   //Тест менеджера с указанным количеством на вывод последних фильмов - негативный
+    void shouldAfishaManagerCustomNegativeGetAll() {
+        //Настройка заглушки
+        Movie[] result = { zero, first, second, third, fourth, fifth, sixth, seventh, eighth, ninth, tenth, eleventh };
+        doReturn(result).when(repository).findAll();
 
-    @Test   //Тест на вывод заданного количества добавленных фильмов, при том что их меньше
-    void shouldFindAllBelowNominalAfishaManagerCustom() {
-        afishaManagerCustom.saveMovie(zero);
-        afishaManagerCustom.saveMovie(first);
-        afishaManagerCustom.saveMovie(second);
-        afishaManagerCustom.saveMovie(third);
+        Movie[] actualManagerCustomNegative = afishaManagerCustomNegative.getAll();
+        Movie[] expectedManagerCustomNegative = { eleventh, tenth, ninth, eighth, seventh, sixth, fifth, fourth, third, second };
+        assertArrayEquals(expectedManagerCustomNegative, actualManagerCustomNegative, "Вывод стандартного количества последних добавленных фильмов");
 
-        Movie[] expected = { third, second, first, zero };
-        Movie[] actual = afishaManagerCustom.findAll();
-
-        assertArrayEquals(actual, expected);
-    }
-
-    @Test   //Тест на вывод заданного количества добавленных фильмов
-    void shouldFindAllNominalAfishaManagerCustom() {
-        afishaManagerCustom.saveMovie(zero);
-        afishaManagerCustom.saveMovie(first);
-        afishaManagerCustom.saveMovie(second);
-        afishaManagerCustom.saveMovie(third);
-        afishaManagerCustom.saveMovie(fourth);
-        afishaManagerCustom.saveMovie(fifth);
-        afishaManagerCustom.saveMovie(sixth);
-        afishaManagerCustom.saveMovie(seventh);
-        afishaManagerCustom.saveMovie(eighth);
-        afishaManagerCustom.saveMovie(ninth);
-        afishaManagerCustom.saveMovie(tenth);
-        afishaManagerCustom.saveMovie(eleventh);
-
-        Movie[] expected = { eleventh, tenth, ninth, eighth, seventh };
-        Movie[] actual = afishaManagerCustom.findAll();
-
-        assertArrayEquals(actual, expected);
-    }
-
-    @Test   //Тест на вывод заданного количества добавленных фильмов, при негативном заданном значении
-    void shouldFindAllAfishaManagerCustomNegative() {
-        afishaManagerCustomNegative.saveMovie(zero);
-        afishaManagerCustomNegative.saveMovie(first);
-        afishaManagerCustomNegative.saveMovie(second);
-        afishaManagerCustomNegative.saveMovie(third);
-
-        Movie[] expected = { third, second, first, zero };
-        Movie[] actual = afishaManagerCustomNegative.findAll();
-
-        assertArrayEquals(actual, expected);
+        //Проверка вызова заглушки
+        verify(repository).findAll();
     }
 }

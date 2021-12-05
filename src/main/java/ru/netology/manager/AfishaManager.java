@@ -2,34 +2,36 @@ package ru.netology.manager;
 
 import lombok.NoArgsConstructor;
 import ru.netology.domain.Movie;
+import ru.netology.repository.AfishaRepository;
 
 @NoArgsConstructor
 public class AfishaManager {
-    private Movie[] movies = new Movie[0];
     private int amountFilms = 10;
+    private AfishaRepository repository;
 
-    public AfishaManager(int amountFilms) {        //Указание количества выводимых фильмов
+    public AfishaManager(AfishaRepository repository) { this.repository = repository; }
+
+    //Указание репозитория и количества выводимых фильмов
+    public AfishaManager(AfishaRepository repository, int amountFilms) {
+        this.repository = repository;
         if (amountFilms <= 0) {
             amountFilms = this.amountFilms;
         }
         this.amountFilms = amountFilms;
     }
 
-    public void saveMovie(Movie movie) {        //Сохранение фильма
-        //Создание нового массива размером +1
-        int length = movies.length + 1;
-        Movie[] tmp = new Movie[length];
-        //Копирование элементов
-        System.arraycopy(movies, 0, tmp, 0, movies.length);
-        //Добавление элемента
-        int lastIndex = tmp.length - 1;
-        tmp[lastIndex] = movie;
-        //Итоговый результат
-        movies = tmp;
+    //Добавление фильма в репозиторий
+    public void addMovie(Movie movie) { repository.saveMovie(movie); }
+
+    //Поиск фильма в репозитории по идентификатору фильма
+    public Movie[] findByIdMovie(int idMovie) {
+        Movie[] result = repository.findMovieById(idMovie);
+        return result;
     }
 
-    public Movie[] findAll() {      //Вывести сохраненные результаты в обратном порядке
-        //Вывод последних 10 добавленных фильмов, если фильмов меньше 10, то выдаёт столько, сколько есть
+    //Вывод всех добавленых фильмов в обратном порядке
+    public Movie[] getAll() {
+        Movie[] movies = repository.findAll();
         int resultLength;
         if (amountFilms <= movies.length) {
             resultLength = amountFilms;
@@ -44,19 +46,9 @@ public class AfishaManager {
         return result;
     }
 
-    public void removeMovieById(int idMovie) {      //Удаление фильма по идентификатору
-        //Создание нового массива размером -1
-        int length = movies.length - 1;
-        Movie[] tmp = new Movie[length];
-        //Копирование элементов, кроме удаляемого
-        int index = 0;
-        for (Movie movie : movies) {
-            if (movie.getIdMovie() != idMovie) {
-                tmp[index] = movie;
-                index++;
-            }
-        }
-        //Итоговый результат
-        movies = tmp;
-    }
+    //Удаление фильма из репозитория по идентификатору фильма
+    public void removeByIdMovie(int idMovie) { repository.removeMovieById(idMovie); }
+
+    //Удаление всех добавленных фильмов из репозитория
+    public void removeAllMovies() { repository.removeAllMovies(); }
 }
